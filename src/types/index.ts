@@ -9,6 +9,16 @@ export interface Product {
     lastUpdated: string;
 }
 
+export interface Coupon {
+    id: string;
+    code: string;
+    discount: string;
+    limit: string;
+    expiryDate: string;
+    assignedTo: string;
+    status: 'Active' | 'Inactive';
+}
+
 export interface Order {
     id: string;
     customer: string;
