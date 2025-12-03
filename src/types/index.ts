@@ -27,3 +27,10 @@ export interface Order {
     status: 'Placed' | 'Packed' | 'Shipped' | 'Delivered';
     total: number;
 }
+
+export interface Category {
+    id: string;
+    name: string;
+    icon: string;
+    displayOrder: number;
+}
