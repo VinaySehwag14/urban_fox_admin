@@ -8,3 +8,12 @@ export interface Product {
     image: string;
     lastUpdated: string;
 }
+
+export interface Order {
+    id: string;
+    customer: string;
+    date: string;
+    payment: 'Paid' | 'Pending' | 'Failed';
+    status: 'Placed' | 'Packed' | 'Shipped' | 'Delivered';
+    total: number;
+}
