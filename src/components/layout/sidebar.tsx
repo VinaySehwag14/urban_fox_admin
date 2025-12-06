@@ -15,6 +15,7 @@ const sidebarItems = [
     { icon: Image, label: "Banners", href: "/banners" },
     { icon: Tag, label: "Coupons", href: "/coupons" },
     { icon: Package, label: "Inventory", href: "/inventory" },
+    { icon: Settings, label: "Settings", href: "/settings" },
 ]
 
 export function Sidebar() {
@@ -24,16 +25,16 @@ export function Sidebar() {
         <aside className="w-64 bg-white border-r h-screen fixed left-0 top-0 flex flex-col">
             <div className="p-6 flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-[#F59827] to-[#E08718] rounded-lg flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-lg">TC</span>
+                    <span className="text-white font-bold text-lg">UF</span>
                 </div>
                 <div>
-                    <h1 className="font-bold text-lg leading-none">The Clothing</h1>
+                    <h1 className="font-bold text-lg leading-none">Urban Fox</h1>
                     <p className="text-xs text-gray-500">Brand</p>
                     <p className="text-xs text-gray-400">Admin Panel</p>
                 </div>
             </div>
 
-            <nav className="flex-1 px-4 py-4 space-y-1">
+            <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
                 {sidebarItems.map((item) => {
                     const isActive = pathname === item.href
                     return (
@@ -55,14 +56,14 @@ export function Sidebar() {
             </nav>
 
             <div className="p-4 border-t">
-                <Link
-                    href="/settings"
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mb-2"
+
+                <button
+                    onClick={async () => {
+                        await fetch("/api/logout", { method: "POST" });
+                        window.location.href = "/login";
+                    }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors w-full"
                 >
-                    <Settings className="w-5 h-5" />
-                    Settings
-                </Link>
-                <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors w-full">
                     <LogOut className="w-5 h-5" />
                     Logout
                 </button>

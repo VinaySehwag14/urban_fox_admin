@@ -10,21 +10,29 @@ const statuses = [
 
 export function OrderStatus() {
     return (
-        <Card>
+        <Card className="col-span-3">
             <CardHeader>
                 <CardTitle>Order Status</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {statuses.map((status) => (
-                        <div key={status.label} className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${status.color}`}>
-                                    <status.icon className="w-5 h-5" />
+                        <div key={status.label} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${status.color}`}>
+                                        <status.icon className="w-4 h-4" />
+                                    </div>
+                                    <span className="font-medium text-sm text-gray-700">{status.label}</span>
                                 </div>
-                                <span className="font-medium text-gray-700">{status.label}</span>
+                                <span className="font-bold text-sm text-gray-900">{status.count}</span>
                             </div>
-                            <span className="font-bold text-gray-900">{status.count}</span>
+                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full ${status.color.split(" ")[0].replace("bg-", "bg-opacity-100 bg-")}`}
+                                    style={{ width: `${(status.count / 483) * 100}%` }}
+                                />
+                            </div>
                         </div>
                     ))}
                 </div>
