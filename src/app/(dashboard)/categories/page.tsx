@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { CategoryHeader } from "@/components/categories/category-header";
+import { CategoryFilters } from "@/components/categories/category-filters";
 import { CategoryTable } from "@/components/categories/category-table";
 import { CategoryDialog } from "@/components/categories/category-dialog";
 
@@ -23,7 +23,6 @@ export default function CategoriesPage() {
             const res = await fetch("/api/categories");
             if (res.ok) {
                 const data = await res.json();
-                // Handle both array and { categories: [...] } formats
                 if (data.categories && Array.isArray(data.categories)) {
                     setCategories(data.categories);
                 } else if (Array.isArray(data)) {
@@ -100,23 +99,20 @@ export default function CategoriesPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
-                <Button onClick={handleAddCategory}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Category
-                </Button>
-            </div>
+            <CategoryHeader onAdd={handleAddCategory} />
 
-            {loading ? (
-                <div>Loading...</div>
-            ) : (
-                <CategoryTable
-                    categories={categories}
-                    onEdit={handleEditCategory}
-                    onDelete={handleDeleteCategory}
-                />
-            )}
+            <div className="bg-white p-6 rounded-xl border shadow-sm">
+                <CategoryFilters count={categories.length} />
+                {loading ? (
+                    <div>Loading...</div>
+                ) : (
+                    <CategoryTable
+                        categories={categories}
+                        onEdit={handleEditCategory}
+                        onDelete={handleDeleteCategory}
+                    />
+                )}
+            </div>
 
             <CategoryDialog
                 open={dialogOpen}

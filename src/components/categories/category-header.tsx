@@ -1,15 +1,19 @@
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 
-export function ProductHeader() {
+interface CategoryHeaderProps {
+    onAdd: () => void;
+}
+
+export function CategoryHeader({ onAdd }: CategoryHeaderProps) {
     return (
         <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
             <div className="flex items-center gap-3">
                 <div className="relative">
                     <input
                         type="text"
-                        placeholder="Search products..."
+                        placeholder="Search categories..."
                         className="w-64 pl-9 pr-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F59827] focus:border-transparent"
                     />
                     <svg
@@ -28,12 +32,10 @@ export function ProductHeader() {
                 </div>
                 <Button
                     className="bg-[#1E88E5] hover:bg-[#1976D2] text-white gap-2"
-                    asChild
+                    onClick={onAdd}
                 >
-                    <a href="/products/add">
-                        <Plus className="h-4 w-4" />
-                        Add Product
-                    </a>
+                    <Plus className="h-4 w-4" />
+                    Add Category
                 </Button>
             </div>
         </div>

@@ -1,11 +1,14 @@
 export interface Product {
     id: string;
     name: string;
-    category: string;
-    price: number;
+    category: string | { name: string }; // Handle both ID string or object
+    sale_price: number;
+    market_price: number;
     stock: number;
     status: 'Active' | 'Inactive' | 'Draft';
-    image: string;
+    image?: string;
+    images?: { url: string; sort_order: number }[];
+    description?: string;
     lastUpdated: string;
 }
 

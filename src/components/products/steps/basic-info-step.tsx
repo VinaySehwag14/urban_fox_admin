@@ -8,14 +8,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { ImageUpload } from "../image-upload"
 
 interface BasicInfoStepProps {
     data: any
     updateData: (key: string, value: any) => void
+    categories: { id: string; name: string }[]
 }
 
-export function BasicInfoStep({ data, updateData }: BasicInfoStepProps) {
+export function BasicInfoStep({ data, updateData, categories }: BasicInfoStepProps) {
     return (
         <div className="space-y-6">
             <div className="space-y-1">
@@ -58,43 +58,23 @@ export function BasicInfoStep({ data, updateData }: BasicInfoStepProps) {
                                 <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="t-shirts">T-Shirts</SelectItem>
-                                <SelectItem value="hoodies">Hoodies</SelectItem>
-                                <SelectItem value="sweatshirts">Sweatshirts</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Sub-Category</Label>
-                        <Select
-                            value={data.subCategory}
-                            onValueChange={(value) => updateData("subCategory", value)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select sub-category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="oversized">Oversized</SelectItem>
-                                <SelectItem value="regular">Regular Fit</SelectItem>
-                                <SelectItem value="slim">Slim Fit</SelectItem>
+                                {categories?.map((category) => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                        {typeof category.name === 'object' ? JSON.stringify(category.name) : category.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <Label>Price</Label>
+                    <Label>Product Image URL</Label>
                     <Input
-                        type="number"
-                        placeholder="0.00"
-                        value={data.price}
-                        onChange={(e) => updateData("price", e.target.value)}
+                        placeholder="https://..."
+                        value={data.image}
+                        onChange={(e) => updateData("image", e.target.value)}
                     />
-                </div>
-
-                <div className="space-y-2">
-                    <Label>Product Images</Label>
-                    <ImageUpload />
                 </div>
             </div>
         </div>
