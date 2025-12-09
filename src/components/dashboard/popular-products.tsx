@@ -2,11 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 const products = [
-    { name: "Vintage Denim Jacket", sales: "120 sold", price: "$79.99" },
-    { name: "Classic White Tee", sales: "98 sold", price: "$24.99" },
-    { name: "Urban Cargo Pants", sales: "75 sold", price: "$65.00" },
-    { name: "Cozy Knit Sweater", sales: "62 sold", price: "$89.50" },
-    { name: "Minimalist Sneakers", sales: "51 sold", price: "$120.00" },
+    { name: "Vintage Denim Jacket", sales: "120 sold", price: "₹79.99" },
+    { name: "Classic White Tee", sales: "98 sold", price: "₹24.99" },
+    { name: "Urban Cargo Pants", sales: "75 sold", price: "₹65.00" },
+    { name: "Cozy Knit Sweater", sales: "62 sold", price: "₹89.50" },
+    { name: "Minimalist Sneakers", sales: "51 sold", price: "₹120.00" },
 ]
 
 export function PopularProducts() {

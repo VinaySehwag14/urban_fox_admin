@@ -9,12 +9,24 @@ import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Plus, Trash2 } from "lucide-react"
 
 const steps = [
     { id: 1, name: "1. Basic Information" },
-    { id: 2, name: "2. Pricing & Inventory" },
+    { id: 2, name: "2. Pricing & Variants" },
     { id: 3, name: "3. Organization" },
 ]
+
+interface Variant {
+    id: string; // Temp ID for UI
+    size: string;
+    colorText: string;
+    colorHex: string;
+    stock: string;
+    mrp: string;
+    selling_price: string;
+    sku_code: string;
+}
 
 export function AddProductForm() {
     const router = useRouter();
@@ -22,19 +34,30 @@ export function AddProductForm() {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
+    // Base Product Data
     const [formData, setFormData] = useState({
         name: "",
         description: "",
         category: "",
-        subCategory: "", // Kept for UI, but might not be in payload if backend doesn't need it
-        sale_price: "",
-        market_price: "",
-        stock: "",
+        brand: "Urban Fox", // Default brand
         status: "Active",
-        image: "",
-        colorHex: "#000000",
-        colorText: "Black",
+        images: [] as string[], // Changed from single image string to array
+    })
+
+    // Variants Data
+    const [variants, setVariants] = useState<Variant[]>([])
+
+    // Steps for Pricing/Inventory are now just for adding variants
+    // We will keep a "temp" variant state for the input fields
+    const [newVariant, setNewVariant] = useState<Variant>({
+        id: "",
         size: "M",
+        colorText: "Black",
+        colorHex: "#000000",
+        stock: "0",
+        mrp: "0",
+        selling_price: "0",
+        sku_code: ""
     })
 
     useEffect(() => {
@@ -56,29 +79,65 @@ export function AddProductForm() {
         fetchCategories();
     }, []);
 
-    const updateData = (key: string, value: any) => {
+    const updateFormData = (key: string, value: any) => {
         setFormData((prev) => ({ ...prev, [key]: value }))
+    }
+
+    const updateNewVariant = (key: keyof Variant, value: any) => {
+        setNewVariant((prev) => ({ ...prev, [key]: value }))
+    }
+
+    const addVariant = () => {
+        if (!newVariant.sku_code) {
+            // Auto-generate SKU if empty
+            const sku = `${formData.name.substring(0, 3).toUpperCase()}-${newVariant.colorText.substring(0, 3).toUpperCase()}-${newVariant.size}`;
+            newVariant.sku_code = sku;
+        }
+
+        setVariants([...variants, { ...newVariant, id: Math.random().toString(36).substr(2, 9) }]);
+        // Reset new variant fields (keep some defaults if needed)
+        setNewVariant({
+            ...newVariant,
+            stock: "0",
+            sku_code: ""
+        });
+    }
+
+    const removeVariant = (id: string) => {
+        setVariants(variants.filter(v => v.id !== id));
     }
 
     const handleSubmit = async () => {
         setLoading(true);
         try {
+            // Derived fields
+            const primaryVariant = variants[0] || newVariant;
+            // Fallback if no variants added, use the current inputs as one variant? 
+            // For now let's assume user must add at least one variant or we use the input fields if variants array is empty.
+
+            const finalVariants = variants.length > 0 ? variants : [{ ...newVariant, id: 'default' }];
+
             const payload = {
                 name: formData.name,
-                images: [
-                    { url: formData.image, sort_order: 1 }
-                ],
-                sale_price: parseFloat(formData.sale_price) || 0,
-                market_price: parseFloat(formData.market_price) || 0,
-                color: {
-                    hex: formData.colorHex,
-                    text: formData.colorText
-                },
-                size: formData.size,
                 description: formData.description,
-                stock: parseInt(formData.stock) || 0,
-                is_active: formData.status === "Active",
-                category: formData.category, // This should be the UUID
+                brand: formData.brand,
+                mrp: parseFloat(finalVariants[0].mrp) || 0, // Base product price from first variant
+                selling_price: parseFloat(finalVariants[0].selling_price) || 0,
+                is_featured: false,
+                category_ids: formData.category ? [formData.category] : [],
+                tag_ids: [], // TODO: Add tags support
+                images: formData.images.map((url, index) => ({
+                    image_url: url,
+                    is_primary: index === 0 // First image is primary
+                })),
+                variants: finalVariants.map(v => ({
+                    color: v.colorText,
+                    size: v.size,
+                    stock_quantity: parseInt(v.stock) || 0,
+                    sku_code: v.sku_code || `${formData.name.substring(0, 3).toUpperCase()}-${v.colorText.substring(0, 3).toUpperCase()}-${v.size}`,
+                    mrp: parseFloat(v.mrp) || 0,
+                    selling_price: parseFloat(v.selling_price) || 0
+                }))
             };
 
             const res = await fetch("/api/products", {
@@ -111,6 +170,17 @@ export function AddProductForm() {
         }
     };
 
+    // Helper for LivePreview data shape
+    const previewData = {
+        ...formData,
+        selling_price: variants[0]?.selling_price || newVariant.selling_price || "0",
+        mrp: variants[0]?.mrp || newVariant.mrp || "0",
+        stock: variants.reduce((acc, v) => acc + (parseInt(v.stock) || 0), 0) + (parseInt(newVariant.stock) || 0),
+        colorHex: variants[0]?.colorHex || newVariant.colorHex,
+        size: variants[0]?.size || newVariant.size,
+        image: formData.images[0] || "" // Use first image for preview
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -141,72 +211,27 @@ export function AddProductForm() {
                     {currentStep === 1 && (
                         <BasicInfoStep
                             data={formData}
-                            updateData={updateData}
+                            updateData={updateFormData}
                             categories={categories}
                         />
                     )}
                     {currentStep === 2 && (
                         <div className="space-y-6">
                             <div className="space-y-1">
-                                <h3 className="text-lg font-semibold">Pricing & Inventory</h3>
-                                <p className="text-sm text-gray-500">Manage price, stock, and variants.</p>
+                                <h3 className="text-lg font-semibold">Pricing & Variants</h3>
+                                <p className="text-sm text-gray-500">Add variants (Size/Color) with specific pricing.</p>
                             </div>
-                            <div className="grid gap-4">
+
+                            {/* Add Variant Form */}
+                            <div className="bg-gray-50 p-4 rounded-lg space-y-4 border">
+                                <h4 className="text-sm font-medium">Add New Variant</h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Sale Price ($)</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="0.00"
-                                            value={formData.sale_price}
-                                            onChange={(e) => updateData("sale_price", e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Market Price ($)</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="0.00"
-                                            value={formData.market_price}
-                                            onChange={(e) => updateData("market_price", e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Stock Quantity</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={formData.stock}
-                                        onChange={(e) => updateData("stock", e.target.value)}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-3 gap-4 border-t pt-4 mt-2">
-                                    <div className="space-y-2">
-                                        <Label>Size</Label>
-                                        <Select
-                                            value={formData.size}
-                                            onValueChange={(value) => updateData("size", value)}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Size" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="XS">XS</SelectItem>
-                                                <SelectItem value="S">S</SelectItem>
-                                                <SelectItem value="M">M</SelectItem>
-                                                <SelectItem value="L">L</SelectItem>
-                                                <SelectItem value="XL">XL</SelectItem>
-                                                <SelectItem value="XXL">XXL</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
                                     <div className="space-y-2">
                                         <Label>Color Name</Label>
                                         <Input
                                             placeholder="e.g. Black"
-                                            value={formData.colorText}
-                                            onChange={(e) => updateData("colorText", e.target.value)}
+                                            value={newVariant.colorText}
+                                            onChange={(e) => updateNewVariant("colorText", e.target.value)}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -215,17 +240,88 @@ export function AddProductForm() {
                                             <Input
                                                 type="color"
                                                 className="w-12 p-1 h-10"
-                                                value={formData.colorHex}
-                                                onChange={(e) => updateData("colorHex", e.target.value)}
+                                                value={newVariant.colorHex}
+                                                onChange={(e) => updateNewVariant("colorHex", e.target.value)}
                                             />
                                             <Input
-                                                placeholder="#000000"
-                                                value={formData.colorHex}
-                                                onChange={(e) => updateData("colorHex", e.target.value)}
+                                                value={newVariant.colorHex}
+                                                onChange={(e) => updateNewVariant("colorHex", e.target.value)}
                                             />
                                         </div>
                                     </div>
+                                    <div className="space-y-2">
+                                        <Label>Size</Label>
+                                        <Select
+                                            value={newVariant.size}
+                                            onValueChange={(value) => updateNewVariant("size", value)}
+                                        >
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {["XS", "S", "M", "L", "XL", "XXL"].map(s => (
+                                                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Stock</Label>
+                                        <Input
+                                            type="number"
+                                            value={newVariant.stock}
+                                            onChange={(e) => updateNewVariant("stock", e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>MRP</Label>
+                                        <Input
+                                            type="number"
+                                            value={newVariant.mrp}
+                                            onChange={(e) => updateNewVariant("mrp", e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Selling Price</Label>
+                                        <Input
+                                            type="number"
+                                            value={newVariant.selling_price}
+                                            onChange={(e) => updateNewVariant("selling_price", e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>SKU (Optional)</Label>
+                                        <Input
+                                            value={newVariant.sku_code}
+                                            onChange={(e) => updateNewVariant("sku_code", e.target.value)}
+                                            placeholder="Auto-generated if empty"
+                                        />
+                                    </div>
                                 </div>
+                                <Button onClick={addVariant} variant="secondary" className="w-full">
+                                    <Plus className="w-4 h-4 mr-2" /> Add Variant
+                                </Button>
+                            </div>
+
+                            {/* Variants List */}
+                            <div className="space-y-2">
+                                <Label>Added Variants ({variants.length})</Label>
+                                {variants.length === 0 ? (
+                                    <p className="text-sm text-gray-400 italic">No variants added yet.</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {variants.map((v) => (
+                                            <div key={v.id} className="flex items-center justify-between p-3 bg-white border rounded-md">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: v.colorHex }} />
+                                                    <span className="font-medium text-sm">{v.colorText} - {v.size}</span>
+                                                    <span className="text-xs text-gray-500">Stock: {v.stock} | ₹{v.selling_price}</span>
+                                                </div>
+                                                <Button size="icon" variant="ghost" className="text-red-500 h-8 w-8" onClick={() => removeVariant(v.id)}>
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -239,7 +335,7 @@ export function AddProductForm() {
                                 <Label>Status</Label>
                                 <Select
                                     value={formData.status}
-                                    onValueChange={(value) => updateData("status", value)}
+                                    onValueChange={(value) => updateFormData("status", value)}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select status" />
@@ -251,13 +347,20 @@ export function AddProductForm() {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="space-y-2">
+                                <Label>Brand</Label>
+                                <Input
+                                    value={formData.brand}
+                                    onChange={(e) => updateFormData("brand", e.target.value)}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
 
                 {/* Live Preview */}
                 <div className="lg:col-span-1">
-                    <LivePreview data={formData} />
+                    <LivePreview data={previewData} />
 
                     <div className="mt-6 flex items-center gap-3">
                         <Button

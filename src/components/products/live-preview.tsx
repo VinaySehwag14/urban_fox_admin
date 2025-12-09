@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge"
 interface LivePreviewProps {
     data: {
         name: string
-        sale_price: string
-        market_price: string
+        selling_price: string
+        mrp: string
         category: string
+        image?: string
     }
 }
 
@@ -20,9 +21,9 @@ export function LivePreview({ data }: LivePreviewProps) {
                         <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-100">Sale</Badge>
                         <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">New</Badge>
                     </div>
-                    {(data as any).image ? (
+                    {data.image ? (
                         <img
-                            src={(data as any).image}
+                            src={data.image}
                             alt={data.name}
                             className="w-full h-full object-cover"
                         />
@@ -38,11 +39,11 @@ export function LivePreview({ data }: LivePreviewProps) {
                     </h4>
                     <div className="flex items-center gap-2">
                         <span className="text-[#1E88E5] font-bold text-lg">
-                            ${data.sale_price || "0.00"}
+                            ₹{data.selling_price || "0.00"}
                         </span>
-                        {Number(data.market_price) > Number(data.sale_price) && (
+                        {Number(data.mrp) > Number(data.selling_price) && (
                             <span className="text-gray-400 text-sm line-through">
-                                ${data.market_price || "0.00"}
+                                ₹{data.mrp || "0.00"}
                             </span>
                         )}
                     </div>

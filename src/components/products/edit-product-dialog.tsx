@@ -187,7 +187,7 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Sale Price ($)</Label>
+                            <Label>Sale Price (₹)</Label>
                             <Input
                                 type="number"
                                 value={formData.sale_price}
@@ -195,7 +195,7 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Market Price ($)</Label>
+                            <Label>Market Price (₹)</Label>
                             <Input
                                 type="number"
                                 value={formData.market_price}

@@ -23,14 +23,20 @@ export default function CategoriesPage() {
             const res = await fetch("/api/categories");
             if (res.ok) {
                 const data = await res.json();
+                let categoriesData = [];
                 if (data.categories && Array.isArray(data.categories)) {
-                    setCategories(data.categories);
+                    categoriesData = data.categories;
                 } else if (Array.isArray(data)) {
-                    setCategories(data);
-                } else {
-                    console.error("Expected array of categories, got:", data);
-                    setCategories([]);
+                    categoriesData = data;
                 }
+
+                // Map backend image_url to frontend image
+                const mappedCategories = categoriesData.map((cat: any) => ({
+                    ...cat,
+                    image: cat.image_url || cat.image || "",
+                }));
+
+                setCategories(mappedCategories);
             }
         } catch (error) {
             console.error("Failed to fetch categories", error);
@@ -76,12 +82,17 @@ export default function CategoriesPage() {
             const url = category.id ? `/api/categories/${category.id}` : "/api/categories";
             const method = category.id ? "PATCH" : "POST";
 
+            const payload = {
+                ...category,
+                image_url: category.image,
+            };
+
             const res = await fetch(url, {
                 method,
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(category),
+                body: JSON.stringify(payload),
             });
 
             if (res.ok) {

@@ -50,9 +50,9 @@ export function ProductsTable({ products, onDelete, onEdit }: ProductsTableProps
                                 <TableCell>
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 relative rounded-md overflow-hidden bg-gray-100">
-                                            {(product.image || (product.images && product.images.length > 0 && product.images[0].url)) ? (
+                                            {(product.image || (product.images && product.images.length > 0 && product.images[0].image_url)) ? (
                                                 <img
-                                                    src={product.image || product.images![0].url}
+                                                    src={product.image || product.images![0].image_url}
                                                     alt={product.name}
                                                     className="w-full h-full object-cover"
                                                 />
@@ -64,16 +64,16 @@ export function ProductsTable({ products, onDelete, onEdit }: ProductsTableProps
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-gray-600">
-                                    {typeof product.category === 'object' && product.category !== null
-                                        ? (product.category as any).name
-                                        : product.category}
+                                    {product.categories && product.categories.length > 0
+                                        ? product.categories.map(c => c.name).join(", ")
+                                        : (typeof product.category === 'object' ? (product.category as any).name : product.category)}
                                 </TableCell>
                                 <TableCell className="font-medium">
                                     <div className="flex flex-col">
-                                        <span className="font-bold">${Number(product.sale_price || 0).toFixed(2)}</span>
-                                        {product.market_price > product.sale_price && (
+                                        <span className="font-bold">₹{Number(product.selling_price || 0).toFixed(2)}</span>
+                                        {product.mrp > product.selling_price && (
                                             <span className="text-xs text-gray-400 line-through">
-                                                ${Number(product.market_price || 0).toFixed(2)}
+                                                ₹{Number(product.mrp || 0).toFixed(2)}
                                             </span>
                                         )}
                                     </div>

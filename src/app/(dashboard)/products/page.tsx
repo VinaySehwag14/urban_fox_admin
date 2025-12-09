@@ -18,6 +18,7 @@ export default function ProductsPage() {
             const res = await fetch("/api/products");
             if (res.ok) {
                 const data = await res.json();
+                console.log("Products Data:", data); // Debug log
                 if (Array.isArray(data)) {
                     setProducts(data);
                 } else if (data.products && Array.isArray(data.products)) {
@@ -61,9 +62,9 @@ export default function ProductsPage() {
         const sorted = [...products];
         switch (sortBy) {
             case "price-asc":
-                return sorted.sort((a, b) => a.sale_price - b.sale_price);
+                return sorted.sort((a, b) => a.selling_price - b.selling_price);
             case "price-desc":
-                return sorted.sort((a, b) => b.sale_price - a.sale_price);
+                return sorted.sort((a, b) => b.selling_price - a.selling_price);
             case "name-asc":
                 return sorted.sort((a, b) => a.name.localeCompare(b.name));
             case "stock-asc":
@@ -83,12 +84,14 @@ export default function ProductsPage() {
         const csvContent = [
             headers.join(","),
             ...products.map(p => {
-                const categoryName = typeof p.category === 'object' && p.category ? (p.category as any).name : p.category;
+                const categoryName = p.categories && p.categories.length > 0
+                    ? p.categories.map(c => c.name).join(", ")
+                    : (typeof p.category === 'object' && p.category ? (p.category as any).name : p.category);
                 return [
                     p.id,
                     `"${p.name.replace(/"/g, '""')}"`, // Escape quotes
-                    p.sale_price,
-                    p.market_price,
+                    p.selling_price,
+                    p.mrp,
                     p.stock,
                     p.status,
                     `"${(categoryName || "").replace(/"/g, '""')}"`
