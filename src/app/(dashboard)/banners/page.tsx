@@ -5,14 +5,7 @@ import { BannerHeader } from "@/components/banners/banner-header";
 import { BannerFilters } from "@/components/banners/banner-filters";
 import { BannerTable } from "@/components/banners/banner-table";
 import { BannerDialog } from "@/components/banners/banner-dialog";
-
-interface Banner {
-    id: string;
-    title: string;
-    sub_text: string;
-    image: string;
-    link: string;
-}
+import { Banner } from "@/types";
 
 export default function BannersPage() {
     const [banners, setBanners] = useState<Banner[]>([]);
