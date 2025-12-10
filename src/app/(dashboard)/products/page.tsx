@@ -62,9 +62,9 @@ export default function ProductsPage() {
         const sorted = [...products];
         switch (sortBy) {
             case "price-asc":
-                return sorted.sort((a, b) => a.selling_price - b.selling_price);
+                return sorted.sort((a, b) => a.sale_price - b.sale_price);
             case "price-desc":
-                return sorted.sort((a, b) => b.selling_price - a.selling_price);
+                return sorted.sort((a, b) => b.sale_price - a.sale_price);
             case "name-asc":
                 return sorted.sort((a, b) => a.name.localeCompare(b.name));
             case "stock-asc":
@@ -90,8 +90,8 @@ export default function ProductsPage() {
                 return [
                     p.id,
                     `"${p.name.replace(/"/g, '""')}"`, // Escape quotes
-                    p.selling_price,
-                    p.mrp,
+                    p.sale_price,
+                    p.market_price,
                     p.stock,
                     p.status,
                     `"${(categoryName || "").replace(/"/g, '""')}"`

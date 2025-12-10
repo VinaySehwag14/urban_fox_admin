@@ -3,8 +3,8 @@ export interface Product {
     name: string;
     categories: { id: string; name: string }[];
     category?: string | { name: string };
-    selling_price: number;
-    mrp: number;
+    sale_price: number;
+    market_price: number;
     stock: number;
     status: 'Active' | 'Inactive' | 'Draft';
     image?: string;
