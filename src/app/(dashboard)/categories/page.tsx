@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { CategoryHeader } from "@/components/categories/category-header";
+import { CategoryFilters } from "@/components/categories/category-filters";
 import { CategoryTable } from "@/components/categories/category-table";
 import { CategoryDialog } from "@/components/categories/category-dialog";
 
@@ -23,15 +23,20 @@ export default function CategoriesPage() {
             const res = await fetch("/api/categories");
             if (res.ok) {
                 const data = await res.json();
-                // Handle both array and { categories: [...] } formats
+                let categoriesData = [];
                 if (data.categories && Array.isArray(data.categories)) {
-                    setCategories(data.categories);
+                    categoriesData = data.categories;
                 } else if (Array.isArray(data)) {
-                    setCategories(data);
-                } else {
-                    console.error("Expected array of categories, got:", data);
-                    setCategories([]);
+                    categoriesData = data;
                 }
+
+                // Map backend image_url to frontend image
+                const mappedCategories = categoriesData.map((cat: any) => ({
+                    ...cat,
+                    image: cat.image_url || cat.image || "",
+                }));
+
+                setCategories(mappedCategories);
             }
         } catch (error) {
             console.error("Failed to fetch categories", error);
@@ -77,12 +82,17 @@ export default function CategoriesPage() {
             const url = category.id ? `/api/categories/${category.id}` : "/api/categories";
             const method = category.id ? "PATCH" : "POST";
 
+            const payload = {
+                ...category,
+                image_url: category.image,
+            };
+
             const res = await fetch(url, {
                 method,
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(category),
+                body: JSON.stringify(payload),
             });
 
             if (res.ok) {
@@ -100,23 +110,20 @@ export default function CategoriesPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
-                <Button onClick={handleAddCategory}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Category
-                </Button>
-            </div>
+            <CategoryHeader onAdd={handleAddCategory} />
 
-            {loading ? (
-                <div>Loading...</div>
-            ) : (
-                <CategoryTable
-                    categories={categories}
-                    onEdit={handleEditCategory}
-                    onDelete={handleDeleteCategory}
-                />
-            )}
+            <div className="bg-white p-6 rounded-xl border shadow-sm">
+                <CategoryFilters count={categories.length} />
+                {loading ? (
+                    <div>Loading...</div>
+                ) : (
+                    <CategoryTable
+                        categories={categories}
+                        onEdit={handleEditCategory}
+                        onDelete={handleDeleteCategory}
+                    />
+                )}
+            </div>
 
             <CategoryDialog
                 open={dialogOpen}

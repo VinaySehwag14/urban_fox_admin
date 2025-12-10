@@ -8,14 +8,34 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { ImageUpload } from "../image-upload"
+import { Button } from "@/components/ui/button"
+import { Plus, X } from "lucide-react"
 
 interface BasicInfoStepProps {
     data: any
     updateData: (key: string, value: any) => void
+    categories: { id: string; name: string }[]
 }
 
-export function BasicInfoStep({ data, updateData }: BasicInfoStepProps) {
+export function BasicInfoStep({ data, updateData, categories }: BasicInfoStepProps) {
+    const images = data.images || [];
+
+    const handleAddImage = () => {
+        updateData("images", [...images, ""]);
+    };
+
+    const handleRemoveImage = (index: number) => {
+        const newImages = [...images];
+        newImages.splice(index, 1);
+        updateData("images", newImages);
+    };
+
+    const handleImageChange = (index: number, value: string) => {
+        const newImages = [...images];
+        newImages[index] = value;
+        updateData("images", newImages);
+    };
+
     return (
         <div className="space-y-6">
             <div className="space-y-1">
@@ -58,43 +78,44 @@ export function BasicInfoStep({ data, updateData }: BasicInfoStepProps) {
                                 <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="t-shirts">T-Shirts</SelectItem>
-                                <SelectItem value="hoodies">Hoodies</SelectItem>
-                                <SelectItem value="sweatshirts">Sweatshirts</SelectItem>
+                                {categories?.map((category) => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                        {typeof category.name === 'object' ? JSON.stringify(category.name) : category.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
+                </div>
+
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <Label>Product Images</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={handleAddImage}>
+                            <Plus className="w-4 h-4 mr-2" /> Add Image
+                        </Button>
+                    </div>
+
+                    {images.length === 0 && (
+                        <div className="text-sm text-gray-500 italic p-2 border border-dashed rounded text-center">
+                            No images added. Click "Add Image" to start.
+                        </div>
+                    )}
+
                     <div className="space-y-2">
-                        <Label>Sub-Category</Label>
-                        <Select
-                            value={data.subCategory}
-                            onValueChange={(value) => updateData("subCategory", value)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select sub-category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="oversized">Oversized</SelectItem>
-                                <SelectItem value="regular">Regular Fit</SelectItem>
-                                <SelectItem value="slim">Slim Fit</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        {images.map((url: string, index: number) => (
+                            <div key={index} className="flex gap-2">
+                                <Input
+                                    placeholder="https://..."
+                                    value={url}
+                                    onChange={(e) => handleImageChange(index, e.target.value)}
+                                />
+                                <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveImage(index)}>
+                                    <X className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        ))}
                     </div>
-                </div>
-
-                <div className="space-y-2">
-                    <Label>Price</Label>
-                    <Input
-                        type="number"
-                        placeholder="0.00"
-                        value={data.price}
-                        onChange={(e) => updateData("price", e.target.value)}
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label>Product Images</Label>
-                    <ImageUpload />
                 </div>
             </div>
         </div>

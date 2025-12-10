@@ -77,7 +77,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total Sales"
-          value="$54,293"
+          value="₹54,293"
           change="+2.5% vs last month"
           trend="up"
         />
@@ -95,7 +95,7 @@ export default function DashboardPage() {
         />
         <StatsCard
           title="Avg. Order Value"
-          value="$28.67"
+          value="₹28.67"
           change="+8.3% vs last month"
           trend="up"
         />

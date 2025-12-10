@@ -1,11 +1,15 @@
 export interface Product {
     id: string;
     name: string;
-    category: string;
-    price: number;
+    categories: { id: string; name: string }[];
+    category?: string | { name: string };
+    selling_price: number;
+    mrp: number;
     stock: number;
     status: 'Active' | 'Inactive' | 'Draft';
-    image: string;
+    image?: string;
+    images?: { image_url: string; is_primary: boolean; display_order: number }[];
+    description?: string;
     lastUpdated: string;
 }
 
