@@ -11,7 +11,7 @@ interface CartItem {
     product: {
         name: string;
         image_url?: string;
-        selling_price: number;
+        sale_price: number;
     };
     quantity: number;
     total: number;
@@ -34,7 +34,7 @@ export default function CartPage() {
                 setCartItems(items);
 
                 // Calculate total if not provided
-                const calcTotal = items.reduce((acc: number, item: any) => acc + (item.product?.selling_price * item.quantity || 0), 0);
+                const calcTotal = items.reduce((acc: number, item: any) => acc + (item.product?.sale_price * item.quantity || 0), 0);
                 setTotal(data.total || calcTotal);
             }
         } catch (error) {
@@ -122,7 +122,7 @@ export default function CartPage() {
                                         <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="font-bold">₹{(item.product?.selling_price * item.quantity).toFixed(2)}</p>
+                                        <p className="font-bold">₹{(item.product?.sale_price * item.quantity).toFixed(2)}</p>
                                         {/* <Button variant="ghost" size="sm" className="text-red-500 h-8 w-8 p-0">
                                             <Trash2 className="w-4 h-4" />
                                           </Button> */}

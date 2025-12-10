@@ -23,8 +23,8 @@ interface Variant {
     colorText: string;
     colorHex: string;
     stock: string;
-    mrp: string;
-    selling_price: string;
+    market_price: string;
+    sale_price: string;
     sku_code: string;
 }
 
@@ -55,8 +55,8 @@ export function AddProductForm() {
         colorText: "Black",
         colorHex: "#000000",
         stock: "0",
-        mrp: "0",
-        selling_price: "0",
+        market_price: "0",
+        sale_price: "0",
         sku_code: ""
     })
 
@@ -121,8 +121,8 @@ export function AddProductForm() {
                 name: formData.name,
                 description: formData.description,
                 brand: formData.brand,
-                mrp: parseFloat(finalVariants[0].mrp) || 0, // Base product price from first variant
-                selling_price: parseFloat(finalVariants[0].selling_price) || 0,
+                mrp: parseFloat(finalVariants[0].market_price) || 0, // Base product price from first variant
+                sale_price: parseFloat(finalVariants[0].sale_price) || 0,
                 is_featured: false,
                 category_ids: formData.category ? [formData.category] : [],
                 tag_ids: [], // TODO: Add tags support
@@ -135,8 +135,8 @@ export function AddProductForm() {
                     size: v.size,
                     stock_quantity: parseInt(v.stock) || 0,
                     sku_code: v.sku_code || `${formData.name.substring(0, 3).toUpperCase()}-${v.colorText.substring(0, 3).toUpperCase()}-${v.size}`,
-                    mrp: parseFloat(v.mrp) || 0,
-                    selling_price: parseFloat(v.selling_price) || 0
+                    mrp: parseFloat(v.market_price) || 0,
+                    sale_price: parseFloat(v.sale_price) || 0
                 }))
             };
 
@@ -173,8 +173,8 @@ export function AddProductForm() {
     // Helper for LivePreview data shape
     const previewData = {
         ...formData,
-        selling_price: variants[0]?.selling_price || newVariant.selling_price || "0",
-        mrp: variants[0]?.mrp || newVariant.mrp || "0",
+        sale_price: variants[0]?.sale_price || newVariant.sale_price || "0",
+        market_price: variants[0]?.market_price || newVariant.market_price || "0",
         stock: variants.reduce((acc, v) => acc + (parseInt(v.stock) || 0), 0) + (parseInt(newVariant.stock) || 0),
         colorHex: variants[0]?.colorHex || newVariant.colorHex,
         size: variants[0]?.size || newVariant.size,
@@ -275,16 +275,16 @@ export function AddProductForm() {
                                         <Label>MRP</Label>
                                         <Input
                                             type="number"
-                                            value={newVariant.mrp}
-                                            onChange={(e) => updateNewVariant("mrp", e.target.value)}
+                                            value={newVariant.market_price}
+                                            onChange={(e) => updateNewVariant("market_price", e.target.value)}
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Selling Price</Label>
                                         <Input
                                             type="number"
-                                            value={newVariant.selling_price}
-                                            onChange={(e) => updateNewVariant("selling_price", e.target.value)}
+                                            value={newVariant.sale_price}
+                                            onChange={(e) => updateNewVariant("sale_price", e.target.value)}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -313,7 +313,7 @@ export function AddProductForm() {
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: v.colorHex }} />
                                                     <span className="font-medium text-sm">{v.colorText} - {v.size}</span>
-                                                    <span className="text-xs text-gray-500">Stock: {v.stock} | ₹{v.selling_price}</span>
+                                                    <span className="text-xs text-gray-500">Stock: {v.stock} | ₹{v.sale_price}</span>
                                                 </div>
                                                 <Button size="icon" variant="ghost" className="text-red-500 h-8 w-8" onClick={() => removeVariant(v.id)}>
                                                     <Trash2 className="w-4 h-4" />

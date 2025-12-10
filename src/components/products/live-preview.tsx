@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge"
 interface LivePreviewProps {
     data: {
         name: string
-        selling_price: string
-        mrp: string
+        sale_price: string
+        market_price: string
         category: string
         image?: string
     }
@@ -39,11 +39,11 @@ export function LivePreview({ data }: LivePreviewProps) {
                     </h4>
                     <div className="flex items-center gap-2">
                         <span className="text-[#1E88E5] font-bold text-lg">
-                            ₹{data.selling_price || "0.00"}
+                            ₹{data.sale_price || "0.00"}
                         </span>
-                        {Number(data.mrp) > Number(data.selling_price) && (
+                        {Number(data.market_price) > Number(data.sale_price) && (
                             <span className="text-gray-400 text-sm line-through">
-                                ₹{data.mrp || "0.00"}
+                                ₹{data.market_price || "0.00"}
                             </span>
                         )}
                     </div>

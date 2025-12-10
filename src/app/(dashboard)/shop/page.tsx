@@ -84,9 +84,9 @@ export default function ShopPage() {
                         </CardHeader>
                         <CardContent className="p-4 pt-0 flex-grow">
                             <div className="mt-2 flex items-center gap-2">
-                                <span className="font-bold text-lg">₹{product.selling_price}</span>
-                                {product.mrp > product.selling_price && (
-                                    <span className="text-sm text-gray-400 line-through">₹{product.mrp}</span>
+                                <span className="font-bold text-lg">₹{product.sale_price}</span>
+                                {product.market_price > product.sale_price && (
+                                    <span className="text-sm text-gray-400 line-through">₹{product.market_price}</span>
                                 )}
                             </div>
                         </CardContent>
