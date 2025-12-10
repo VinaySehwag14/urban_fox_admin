@@ -11,14 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Edit2, Trash2, ExternalLink } from "lucide-react";
-
-interface Banner {
-    id?: string;
-    title: string;
-    sub_text: string;
-    image: string;
-    link: string;
-}
+import { Banner } from "@/types";
 
 interface BannerTableProps {
     banners: Banner[];
