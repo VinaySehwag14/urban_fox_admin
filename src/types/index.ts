@@ -3,8 +3,8 @@ export interface Product {
     name: string;
     categories: { id: string; name: string }[];
     category?: string | { name: string };
-    selling_price: number;
-    mrp: number;
+    sale_price: number;
+    market_price: number;
     stock: number;
     status: 'Active' | 'Inactive' | 'Draft';
     image?: string;
@@ -37,4 +37,12 @@ export interface Category {
     name: string;
     icon: string;
     displayOrder: number;
+}
+
+export interface Banner {
+    id?: string;
+    title: string;
+    sub_text: string;
+    image: string;
+    link: string;
 }

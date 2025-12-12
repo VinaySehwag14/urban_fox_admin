@@ -12,14 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-interface Banner {
-    id?: string;
-    title: string;
-    sub_text: string;
-    image: string;
-    link: string;
-}
+import { Banner } from "@/types";
 
 interface BannerDialogProps {
     open: boolean;

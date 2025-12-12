@@ -55,7 +55,7 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
     useEffect(() => {
         if (product) {
             const categoryId = typeof product.category === 'object' && product.category ? (product.category as any).id : product.category
-            const imageUrl = product.image || (product.images && product.images.length > 0 ? product.images[0].url : "")
+            const imageUrl = product.image || (product.images && product.images.length > 0 ? product.images[0].image_url : "")
 
             setFormData({
                 name: product.name || "",

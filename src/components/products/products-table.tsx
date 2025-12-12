@@ -70,10 +70,10 @@ export function ProductsTable({ products, onDelete, onEdit }: ProductsTableProps
                                 </TableCell>
                                 <TableCell className="font-medium">
                                     <div className="flex flex-col">
-                                        <span className="font-bold">₹{Number(product.selling_price || 0).toFixed(2)}</span>
-                                        {product.mrp > product.selling_price && (
+                                        <span className="font-bold">₹{Number(product.sale_price || 0).toFixed(2)}</span>
+                                        {product.market_price > product.sale_price && (
                                             <span className="text-xs text-gray-400 line-through">
-                                                ₹{Number(product.mrp || 0).toFixed(2)}
+                                                ₹{Number(product.market_price || 0).toFixed(2)}
                                             </span>
                                         )}
                                     </div>
