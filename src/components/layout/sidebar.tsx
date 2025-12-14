@@ -2,70 +2,127 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, ShoppingBag, ClipboardList, Users, PieChart, Image, Package, Settings, LogOut, Layers, Tag } from "lucide-react"
+import {
+    LayoutDashboard,
+    ShoppingBag,
+    ClipboardList,
+    Users,
+    PieChart,
+    Image as ImageIcon,
+    Package,
+    Settings,
+    LogOut,
+    Layers,
+    Tag,
+    ChevronRight,
+    QrCode
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const sidebarItems = [
+const mainNav = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: ShoppingBag, label: "Products", href: "/products" },
-    { icon: Layers, label: "Categories", href: "/categories" },
     { icon: ClipboardList, label: "Orders", href: "/orders" },
     { icon: Users, label: "Customers", href: "/customers" },
-    { icon: PieChart, label: "Analytics", href: "/analytics" },
-    { icon: Image, label: "Banners", href: "/banners" },
-    { icon: Tag, label: "Coupons", href: "/coupons" },
     { icon: Package, label: "Inventory", href: "/inventory" },
+]
+
+const marketingNav = [
+    { icon: PieChart, label: "Analytics", href: "/analytics" },
+    { icon: ImageIcon, label: "Banners", href: "/banners" },
+    { icon: Tag, label: "Coupons", href: "/coupons" },
+    { icon: Layers, label: "Categories", href: "/categories" },
+]
+
+const systemNav = [
     { icon: Settings, label: "Settings", href: "/settings" },
 ]
 
 export function Sidebar() {
     const pathname = usePathname()
 
-    return (
-        <aside className="w-64 bg-white border-r h-screen fixed left-0 top-0 flex flex-col">
-            <div className="p-6 flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#F59827] to-[#E08718] rounded-lg flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-lg">UF</span>
+    const NavItem = ({ item }: { item: any }) => {
+        const isActive = pathname === item.href
+        return (
+            <Link
+                href={item.href}
+                className={cn(
+                    "group flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                    isActive
+                        ? "bg-gradient-to-r from-[#F59827] to-[#FFB65C] text-white shadow-md shadow-orange-200"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                )}
+            >
+                <div className="flex items-center gap-3">
+                    <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600")} />
+                    <span>{item.label}</span>
                 </div>
-                <div>
-                    <h1 className="font-bold text-lg leading-none">Urban Fox</h1>
-                    <p className="text-xs text-gray-500">Brand</p>
-                    <p className="text-xs text-gray-400">Admin Panel</p>
+                {isActive && <ChevronRight className="w-4 h-4 text-white/80" />}
+            </Link>
+        )
+    }
+
+    return (
+        <aside className="w-72 bg-white/80 backdrop-blur-xl border-r border-slate-200 h-screen fixed left-0 top-0 flex flex-col z-50">
+            {/* Brand Header */}
+            <div className="p-6 pb-2">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#F59827] to-[#FFB65C] rounded-xl flex items-center justify-center shadow-lg shadow-orange-100">
+                        <span className="text-white font-bold text-lg font-heading">UF</span>
+                    </div>
+                    <div>
+                        <h1 className="font-bold text-lg leading-tight font-heading text-slate-900">Urban Fox</h1>
+                        <p className="text-xs text-slate-500 font-medium">Admin Workspace</p>
+                    </div>
                 </div>
             </div>
 
-            <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-                {sidebarItems.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                                isActive
-                                    ? "bg-[#FFF4E6] text-[#F59827]"
-                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                            )}
-                        >
-                            <item.icon className="w-5 h-5" />
-                            {item.label}
-                        </Link>
-                    )
-                })}
+            {/* Navigation */}
+            <nav className="flex-1 px-4 space-y-6 overflow-y-auto no-scrollbar py-2">
+
+                <div>
+                    <h3 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Overview</h3>
+                    <div className="space-y-1">
+                        {mainNav.map((item) => <NavItem key={item.href} item={item} />)}
+                    </div>
+                </div>
+
+                <div>
+                    <h3 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Marketing & Content</h3>
+                    <div className="space-y-1">
+                        {marketingNav.map((item) => <NavItem key={item.href} item={item} />)}
+                    </div>
+                </div>
+
+                <div>
+                    <h3 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">System</h3>
+                    <div className="space-y-1">
+                        {systemNav.map((item) => <NavItem key={item.href} item={item} />)}
+                    </div>
+                </div>
+
             </nav>
 
-            <div className="p-4 border-t">
-
+            {/* User Profile / Logout */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                <div className="flex items-center gap-3 mb-3 px-2">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-orange-100 to-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 font-bold text-xs">
+                        AD
+                    </div>
+                    <div className="overflow-hidden">
+                        <p className="text-sm font-semibold text-slate-900 truncate">Admin User</p>
+                        <p className="text-xs text-slate-500 truncate">admin@urbanfox.com</p>
+                    </div>
+                </div>
                 <button
                     onClick={async () => {
                         await fetch("/api/logout", { method: "POST" });
                         window.location.href = "/login";
                     }}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors w-full"
+                    className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg w-full transition-colors"
                 >
-                    <LogOut className="w-5 h-5" />
-                    Logout
+                    <LogOut className="w-4 h-4" />
+                    Sign Out
                 </button>
             </div>
         </aside>

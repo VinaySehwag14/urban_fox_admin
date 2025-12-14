@@ -1,44 +1,41 @@
 "use client"
 
-import { Bell, Search, Plus } from "lucide-react"
+import { Bell, Search, Plus, Menu } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export function Header() {
     return (
-        <header className="h-16 bg-white border-b flex items-center justify-between px-8 sticky top-0 z-10">
-            <h2 className="text-xl font-semibold text-gray-800">Dashboard Overview</h2>
+        <header className="h-20 flex items-center justify-between px-8 sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 transition-all">
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" className="lg:hidden text-slate-500">
+                    <Menu className="h-6 w-6" />
+                </Button>
+                {/* Breadcrumb or Page title placeholder */}
+                <div className="hidden md:block">
+                    {/* Welcome message removed */}
+                </div>
+            </div>
 
             <div className="flex items-center gap-4">
-                <div className="relative w-64">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <div className="relative w-72 hidden md:block">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
-                        placeholder="Search products, orders, customers"
-                        className="pl-9 bg-gray-50 border-gray-200 focus-visible:ring-[#F59827]"
+                        placeholder="Type to search..."
+                        className="pl-10 h-10 bg-slate-100/50 border-slate-200 focus-visible:ring-2 focus-visible:ring-[#F59827] focus-visible:bg-white rounded-xl transition-all"
                     />
                 </div>
 
-                <Button className="bg-[#F59827] hover:bg-[#E08718] text-white">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Product
-                </Button>
+                <div className="flex items-center gap-2 border-l border-slate-200 pl-4 ml-2">
+                    <Button variant="ghost" size="icon" className="text-slate-500 hover:text-[#F59827] hover:bg-orange-50 rounded-full relative">
+                        <Bell className="h-5 w-5" />
+                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                    </Button>
 
-                <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700 relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </Button>
-
-                <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-[#FFF4E6] text-[#F59827] text-sm font-semibold">
-                            AU
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="text-sm">
-                        <p className="font-medium text-gray-900">Admin User</p>
-                        <p className="text-xs text-gray-500">admin@urbanfox.com</p>
-                    </div>
+                    <Button className="bg-gradient-to-r from-[#F59827] to-[#FFB65C] hover:opacity-90 text-white rounded-xl shadow-md shadow-orange-200 transition-all">
+                        <Plus className="h-4 w-4 mr-2" />
+                        <span>Quick Action</span>
+                    </Button>
                 </div>
             </div>
         </header>

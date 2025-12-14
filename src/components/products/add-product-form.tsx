@@ -110,19 +110,43 @@ export function AddProductForm() {
     const handleSubmit = async () => {
         setLoading(true);
         try {
-            // Derived fields
-            const primaryVariant = variants[0] || newVariant;
-            // Fallback if no variants added, use the current inputs as one variant? 
-            // For now let's assume user must add at least one variant or we use the input fields if variants array is empty.
+            // Validation: Ensure at least one variant is added
+            if (variants.length === 0) {
+                alert("Please add at least one variant with pricing information before publishing.");
+                setLoading(false);
+                return;
+            }
 
-            const finalVariants = variants.length > 0 ? variants : [{ ...newVariant, id: 'default' }];
+            // Validation: Check if name is provided
+            if (!formData.name.trim()) {
+                alert("Product name is required.");
+                setLoading(false);
+                return;
+            }
+
+            // Validation: Check if first variant has valid prices
+            const firstVariant = variants[0];
+            const mrpValue = parseFloat(firstVariant.market_price);
+            const sellingPriceValue = parseFloat(firstVariant.sale_price);
+
+            if (!mrpValue || mrpValue <= 0) {
+                alert("MRP (Market Price) must be greater than 0.");
+                setLoading(false);
+                return;
+            }
+
+            if (!sellingPriceValue || sellingPriceValue <= 0) {
+                alert("Selling Price must be greater than 0.");
+                setLoading(false);
+                return;
+            }
 
             const payload = {
                 name: formData.name,
                 description: formData.description,
                 brand: formData.brand,
-                mrp: parseFloat(finalVariants[0].market_price) || 0, // Base product price from first variant
-                sale_price: parseFloat(finalVariants[0].sale_price) || 0,
+                mrp: mrpValue,
+                selling_price: sellingPriceValue, // Changed from sale_price to selling_price
                 is_featured: false,
                 category_ids: formData.category ? [formData.category] : [],
                 tag_ids: [], // TODO: Add tags support
@@ -130,15 +154,17 @@ export function AddProductForm() {
                     image_url: url,
                     is_primary: index === 0 // First image is primary
                 })),
-                variants: finalVariants.map(v => ({
+                variants: variants.map(v => ({
                     color: v.colorText,
                     size: v.size,
                     stock_quantity: parseInt(v.stock) || 0,
                     sku_code: v.sku_code || `${formData.name.substring(0, 3).toUpperCase()}-${v.colorText.substring(0, 3).toUpperCase()}-${v.size}`,
                     mrp: parseFloat(v.market_price) || 0,
-                    sale_price: parseFloat(v.sale_price) || 0
+                    selling_price: parseFloat(v.sale_price) || 0 // Changed from sale_price to selling_price
                 }))
             };
+
+            console.log("Submitting payload:", payload); // Debug log
 
             const res = await fetch("/api/products", {
                 method: "POST",
@@ -157,6 +183,7 @@ export function AddProductForm() {
             }
         } catch (error) {
             console.error("Failed to create product", error);
+            alert("An error occurred while creating the product. Please try again.");
         } finally {
             setLoading(false);
         }
