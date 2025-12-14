@@ -6,68 +6,61 @@ import { LowStockItems } from "@/components/dashboard/low-stock-items"
 import { cookies } from "next/headers"
 import { DollarSign, ShoppingBag, Users, CreditCard } from "lucide-react"
 
-async function getDashboardData() {
+async function getAnalyticsData() {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value;
 
-  if (!token) return { orders: [], users: [], products: [] };
+  if (!token) return { orders: [], products: [] };
 
   try {
-    // Fetch orders and products in parallel
     const [ordersRes, productsRes] = await Promise.all([
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/orders/admin`, {
         headers: { Authorization: `Bearer ${token}` },
         next: { revalidate: 0 }
       }),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/products/all`, { // Endpoint logic borrowed from inventory
-        headers: { Authorization: `Bearer ${token}` },
-        next: { revalidate: 0 }
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/products/all`, {
+          headers: { Authorization: `Bearer ${token}` },
+          next: { revalidate: 0 }
       })
     ]);
 
     const ordersData = ordersRes.ok ? await ordersRes.json() : { orders: [] };
-
-    // Handle product response structure (could be { products: [...] } or just [...])
     let products = [];
     if (productsRes.ok) {
-      const pData = await productsRes.json();
-      products = pData.products || (Array.isArray(pData) ? pData : []);
+        const pData = await productsRes.json();
+        products = pData.products || (Array.isArray(pData) ? pData : []);
     }
 
     return {
       orders: ordersData.orders || [],
-      users: [],
       products: products
     };
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
-    return { orders: [], users: [], products: [] };
+    console.error("Error fetching analytics data:", error);
+    return { orders: [], products: [] };
   }
 }
 
-export default async function DashboardPage() {
-  const { orders, products } = await getDashboardData();
+export default async function AnalyticsPage() {
+  const { orders, products } = await getAnalyticsData();
 
-  // 1. Total Sales (Paid/Success orders only)
+  // Metrics Calculation
   const totalSales = orders
-    .filter((o: any) =>
-      o.payment_status?.toLowerCase() === 'paid' ||
-      o.payment_status?.toLowerCase() === 'success'
+    .filter((o: any) => 
+        o.payment_status?.toLowerCase() === 'paid' || 
+        o.payment_status?.toLowerCase() === 'success'
     )
     .reduce((acc: number, o: any) => acc + Number(o.final_amount || o.total_amount || 0), 0);
 
-  // 2. Total Orders
   const totalOrdersCount = orders.length;
-
-  // 3. Average Order Value
   const avgOrderValue = totalOrdersCount > 0 ? (totalSales / totalOrdersCount) : 0;
-
-  // 4. Customers (Unique User IDs)
   const uniqueCustomers = new Set(orders.map((o: any) => o.user_id || o.user?.email || "unknown").filter((id: string) => id !== "unknown"));
   const newCustomersCount = uniqueCustomers.size;
 
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-bold tracking-tight text-gray-900">Analytics Overview</h1>
+      
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total Sales"
@@ -84,7 +77,7 @@ export default async function DashboardPage() {
           icon={ShoppingBag}
         />
         <StatsCard
-          title="Total Customers"
+          title="Unique Customers"
           value={newCustomersCount.toString()}
           change=""
           trend="up"
@@ -106,10 +99,10 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <BestSellingProducts orders={orders} />
-        <LowStockItems products={products} />
-      </div>
+       <div className="grid gap-4 md:grid-cols-2">
+            <BestSellingProducts orders={orders} />
+            <LowStockItems products={products} />
+        </div>
     </div>
   )
 }
