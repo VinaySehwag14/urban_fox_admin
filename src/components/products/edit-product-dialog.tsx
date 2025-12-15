@@ -64,7 +64,9 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
                 sale_price: product.sale_price?.toString() || "",
                 market_price: product.market_price?.toString() || "",
                 stock: product.stock?.toString() || "",
-                status: product.status || "Active",
+                status: typeof product.status === 'boolean'
+                    ? (product.status ? "Active" : "Inactive")
+                    : (product.status || "Active"),
                 image: imageUrl,
                 colorHex: "#000000", // Default if not available
                 colorText: "Black",
