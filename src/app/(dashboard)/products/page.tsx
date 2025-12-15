@@ -18,7 +18,7 @@ export default function ProductsPage() {
             const res = await fetch("/api/products");
             if (res.ok) {
                 const data = await res.json();
-                console.log("Products Data:", data); // Debug log
+                console.log("Products Data:debug", data); // Debug log
                 if (Array.isArray(data)) {
                     setProducts(data);
                 } else if (data.products && Array.isArray(data.products)) {
