@@ -39,7 +39,7 @@ export function InventoryTable({ initialProducts }: InventoryTableProps) {
     const [searchTerm, setSearchTerm] = useState("");
 
     // Flatten products and variants into a single list for the table
-    const flattenedRows: InventoryRow[] = (initialProducts || []).flatMap(product => {
+    const flattenedRows: InventoryRow[] = (initialProducts || []).flatMap((product): InventoryRow[] => {
         if (!product) return []; // Defensive check
 
         const baseImage = (product.images && product.images.length > 0)
