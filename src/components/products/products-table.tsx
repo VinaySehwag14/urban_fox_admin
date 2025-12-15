@@ -13,7 +13,7 @@ import { Product } from "@/types"
 
 interface ProductsTableProps {
     products: Product[];
-    onDelete: (id: string) => void;
+    onDelete: (id: string | number) => void;
     onEdit: (product: Product) => void;
 }
 

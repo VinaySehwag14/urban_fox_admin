@@ -7,7 +7,8 @@ export interface Product {
     category?: string | { name: string };
     selling_price: number;
     mrp: number;
-    // sale_price: number; // Deprecated/Mapped? Keeping if used elsewhere, but optional
+    sale_price: number;
+    market_price: number;
     stock: number;
     status: 'Active' | 'Inactive' | 'Draft' | boolean; // JSON has is_active boolean
     image?: string;
