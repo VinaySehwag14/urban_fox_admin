@@ -45,9 +45,20 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true, user: data });
     } catch (error) {
-        console.error("Login error:", error);
+        console.error("Login caught error:", error);
+        console.log("Configuration Debug:", {
+            apiUrl: process.env.NEXT_PUBLIC_API_URL,
+            hasApiKey: !!process.env.API_KEY
+        });
+
         return NextResponse.json(
-            { error: "Internal server error" },
+            {
+                error: "Internal server error",
+                details: error instanceof Error ? error.message : "Unknown error",
+                debug: {
+                    attemptedUrl: `${process.env.NEXT_PUBLIC_API_URL}/auth/login`
+                }
+            },
             { status: 500 }
         );
     }
