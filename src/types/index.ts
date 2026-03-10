@@ -27,6 +27,7 @@ export interface Variant {
     selling_price: number;
     mrp: number;
     stock_quantity: number;
+    image_url?: string;
 }
 
 export interface Coupon {

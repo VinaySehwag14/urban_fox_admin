@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Product } from "@/types"
+import { Product, Variant } from "@/types"
+import { ImageUpload } from "./image-upload"
 
 interface EditProductDialogProps {
     product: Product | null
@@ -32,6 +33,7 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
         colorText: "Black",
         size: "M",
     })
+    const [variants, setVariants] = useState<Variant[]>([])
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -72,6 +74,7 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
                 colorText: "Black",
                 size: "M",
             })
+            setVariants(product.variants || [])
         }
     }, [product])
 
@@ -94,6 +97,7 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
                 stock: parseInt(formData.stock) || 0,
                 is_active: formData.status === "Active",
                 category: formData.category,
+                variants: variants,
             }
 
             const res = await fetch(`/api/products/${product.id}`, {
@@ -122,6 +126,22 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
     const updateData = (key: string, value: any) => {
         setFormData((prev) => ({ ...prev, [key]: value }))
     }
+
+    // Group variants by color for easier image assignment
+    const variantsByColor = variants.reduce((acc, variant) => {
+        const colorName = variant.color || "Default";
+        if (!acc[colorName]) {
+            acc[colorName] = {
+                variants: [],
+                image_url: variant.image_url || "" // Take first image_url found for this color
+            };
+        }
+        acc[colorName].variants.push(variant);
+        if (!acc[colorName].image_url && variant.image_url) {
+            acc[colorName].image_url = variant.image_url;
+        }
+        return acc;
+    }, {} as Record<string, { variants: Variant[], image_url: string }>);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -266,6 +286,70 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
                             </div>
                         </div>
                     </div>
+
+                    {variants.length > 0 && (
+                        <div className="space-y-3 pt-4 border-t mt-6">
+                            <Label className="text-base font-semibold">Product Variants</Label>
+                            <div className="space-y-4 max-h-72 overflow-y-auto pr-2">
+                                {Object.entries(variantsByColor).map(([colorName, group]) => (
+                                    <div key={colorName} className="space-y-3 rounded-lg border border-gray-200 overflow-hidden">
+                                        {/* Color Group Header & Image Upload */}
+                                        <div className="bg-gray-50 p-3 border-b flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="font-semibold text-gray-900">{colorName} Variants</h4>
+                                            </div>
+                                            <div className="w-full sm:w-[350px] space-y-1.5">
+                                                <Label className="text-xs text-gray-500">Image for {colorName}</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <Input
+                                                        className="flex-1 h-8 text-xs font-mono bg-white"
+                                                        value={group.image_url}
+                                                        onChange={(e) => {
+                                                            const newUrl = e.target.value;
+                                                            const updatedVariants = variants.map(v =>
+                                                                (v.color || "Default") === colorName ? { ...v, image_url: newUrl } : v
+                                                            );
+                                                            setVariants(updatedVariants);
+                                                        }}
+                                                        placeholder="https://..."
+                                                    />
+                                                    <div className="w-[100px] shrink-0">
+                                                        <ImageUpload
+                                                            value={group.image_url ? [group.image_url] : []}
+                                                            onChange={(urls) => {
+                                                                const url = urls.length > 0 ? urls[0] : "";
+                                                                const updatedVariants = variants.map(v =>
+                                                                    (v.color || "Default") === colorName ? { ...v, image_url: url } : v
+                                                                );
+                                                                setVariants(updatedVariants);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Sizes for this Color */}
+                                        <div className="p-3 space-y-2">
+                                            {group.variants.map((v) => (
+                                                <div key={v.id || v.sku_code} className="flex flex-wrap sm:flex-nowrap items-center gap-3 p-2 bg-white border border-gray-100 rounded-lg shadow-sm">
+                                                    <div className="flex items-center gap-2 min-w-[80px]">
+                                                        <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-sm font-bold rounded-md">{v.size || "M"}</span>
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 flex-1 font-mono">{v.sku_code}</div>
+                                                    <div className="flex gap-2 text-xs">
+                                                        <span className="text-gray-500">MRP: <span className="text-gray-900 font-medium">₹{v.mrp}</span></span>
+                                                        <span className="text-gray-500">Price: <span className="text-[#1E88E5] font-medium">₹{v.selling_price}</span></span>
+                                                        <span className="text-gray-500">Stock: <span className="text-gray-900 font-medium">{v.stock_quantity}</span></span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex justify-end gap-2">
