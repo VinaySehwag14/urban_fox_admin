@@ -15,7 +15,9 @@ import {
     Layers,
     Tag,
     ChevronRight,
-    QrCode
+    QrCode,
+    Palette,
+    Instagram
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -32,6 +34,8 @@ const marketingNav = [
     { icon: ImageIcon, label: "Banners", href: "/banners" },
     { icon: Tag, label: "Coupons", href: "/coupons" },
     { icon: Layers, label: "Categories", href: "/categories" },
+    { icon: Palette, label: "Colors", href: "/colors" },
+    { icon: Instagram, label: "Instagram", href: "/instagram" },
 ]
 
 const systemNav = [

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Trash2 } from "lucide-react"
+import { ImageUpload } from "./image-upload"
 
 const steps = [
     { id: 1, name: "1. Basic Information" },
@@ -26,6 +27,7 @@ interface Variant {
     market_price: string;
     sale_price: string;
     sku_code: string;
+    image_url?: string;
 }
 
 export function AddProductForm() {
@@ -33,6 +35,7 @@ export function AddProductForm() {
     const [currentStep, setCurrentStep] = useState(1)
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+    const [globalColors, setGlobalColors] = useState<{ id: string; name: string; hex_code: string }[]>([]);
 
     // Base Product Data
     const [formData, setFormData] = useState({
@@ -57,26 +60,46 @@ export function AddProductForm() {
         stock: "0",
         market_price: "0",
         sale_price: "0",
-        sku_code: ""
+        sku_code: "",
+        image_url: ""
     })
 
     useEffect(() => {
-        const fetchCategories = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch("/api/categories");
-                if (res.ok) {
-                    const data = await res.json();
+                const [resCat, resCol] = await Promise.all([
+                    fetch("/api/categories"),
+                    fetch("/api/colors")
+                ]);
+
+                if (resCat.ok) {
+                    const data = await resCat.json();
                     if (data.categories && Array.isArray(data.categories)) {
                         setCategories(data.categories);
                     } else if (Array.isArray(data)) {
                         setCategories(data);
                     }
                 }
+
+                if (resCol.ok) {
+                    const colData = await resCol.json();
+                    if (colData.colors && Array.isArray(colData.colors)) {
+                        setGlobalColors(colData.colors);
+                        // Auto-select first color if available
+                        if (colData.colors.length > 0) {
+                            setNewVariant(prev => ({
+                                ...prev,
+                                colorText: colData.colors[0].name,
+                                colorHex: colData.colors[0].hex_code
+                            }));
+                        }
+                    }
+                }
             } catch (error) {
-                console.error("Failed to fetch categories", error);
+                console.error("Failed to fetch initial data", error);
             }
         };
-        fetchCategories();
+        fetchData();
     }, []);
 
     const updateFormData = (key: string, value: any) => {
@@ -141,6 +164,34 @@ export function AddProductForm() {
                 return;
             }
 
+            // Validation: Ensure all SKU codes are unique
+            const computedVariants = variants.map(v => {
+                let finalSku = v.sku_code;
+                if (!finalSku) {
+                    const colorPrefix = v.colorText.substring(0, 3).toUpperCase();
+                    const namePrefix = formData.name ? formData.name.substring(0, 3).toUpperCase() : "UF";
+                    const shortId = Math.random().toString(36).substring(2, 6).toUpperCase();
+                    finalSku = `${namePrefix}-${colorPrefix}-${v.size}-${shortId}`;
+                }
+                return {
+                    color: v.colorText,
+                    colorHex: v.colorHex,
+                    size: v.size,
+                    stock_quantity: parseInt(v.stock) || 0,
+                    sku_code: finalSku,
+                    mrp: parseFloat(v.market_price) || 0,
+                    selling_price: parseFloat(v.sale_price) || 0,
+                    image_url: v.image_url || undefined
+                };
+            });
+
+            const skuSet = new Set(computedVariants.map(v => v.sku_code));
+            if (skuSet.size !== computedVariants.length) {
+                alert("Duplicate SKU codes detected among your variants. Please ensure each variant (Size/Color) has a uniquely generated or manual SKU pattern.");
+                setLoading(false);
+                return;
+            }
+
             const payload = {
                 name: formData.name,
                 description: formData.description,
@@ -154,14 +205,7 @@ export function AddProductForm() {
                     image_url: url,
                     is_primary: index === 0 // First image is primary
                 })),
-                variants: variants.map(v => ({
-                    color: v.colorText,
-                    size: v.size,
-                    stock_quantity: parseInt(v.stock) || 0,
-                    sku_code: v.sku_code || `${formData.name.substring(0, 3).toUpperCase()}-${v.colorText.substring(0, 3).toUpperCase()}-${v.size}`,
-                    mrp: parseFloat(v.market_price) || 0,
-                    selling_price: parseFloat(v.sale_price) || 0 // Changed from sale_price to selling_price
-                }))
+                variants: computedVariants
             };
 
             console.log("Submitting payload:", payload); // Debug log
@@ -208,6 +252,23 @@ export function AddProductForm() {
         image: formData.images[0] || "" // Use first image for preview
     };
 
+    // Group variants by color for easier image assignment
+    const variantsByColor = variants.reduce((acc, variant) => {
+        if (!acc[variant.colorText]) {
+            acc[variant.colorText] = {
+                hex: variant.colorHex,
+                variants: [],
+                image_url: variant.image_url || "" // Take first image_url found for this color
+            };
+        }
+        acc[variant.colorText].variants.push(variant);
+        // If we hadn't found an image yet, and this variant has one, grab it
+        if (!acc[variant.colorText].image_url && variant.image_url) {
+            acc[variant.colorText].image_url = variant.image_url;
+        }
+        return acc;
+    }, {} as Record<string, { hex: string, variants: Variant[], image_url: string }>);
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -251,47 +312,102 @@ export function AddProductForm() {
 
                             {/* Add Variant Form */}
                             <div className="bg-gray-50 p-4 rounded-lg space-y-4 border">
-                                <h4 className="text-sm font-medium">Add New Variant</h4>
+                                <h4 className="text-sm font-medium">Bulk Variant Generator</h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Color Name</Label>
-                                        <Input
-                                            placeholder="e.g. Black"
-                                            value={newVariant.colorText}
-                                            onChange={(e) => updateNewVariant("colorText", e.target.value)}
-                                        />
+                                    <div className="space-y-4 col-span-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-white">
+                                            <div className="space-y-2">
+                                                <Label>Import Global Color</Label>
+                                                <Select
+                                                    value={globalColors.find(c => c.name === newVariant.colorText)?.name || "custom"}
+                                                    onValueChange={(val) => {
+                                                        const selected = globalColors.find(c => c.name === val);
+                                                        if (selected) {
+                                                            setNewVariant(prev => ({
+                                                                ...prev,
+                                                                colorText: selected.name,
+                                                                colorHex: selected.hex_code
+                                                            }));
+                                                        } else {
+                                                            setNewVariant(prev => ({ ...prev, colorText: "", colorHex: "#000000" }));
+                                                        }
+                                                    }}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select or Custom" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="custom">Custom Color...</SelectItem>
+                                                        {globalColors.map(c => (
+                                                            <SelectItem key={c.id} value={c.name}>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: c.hex_code }} />
+                                                                    {c.name}
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Color Name</Label>
+                                                <Input
+                                                    placeholder="e.g. Neon Pink"
+                                                    value={newVariant.colorText}
+                                                    onChange={(e) => updateNewVariant("colorText", e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Color Hex</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <Input
+                                                        type="color"
+                                                        className="w-12 p-1 h-10 cursor-pointer rounded-md"
+                                                        value={newVariant.colorHex}
+                                                        onChange={(e) => updateNewVariant("colorHex", e.target.value)}
+                                                    />
+                                                    <Input
+                                                        value={newVariant.colorHex}
+                                                        onChange={(e) => updateNewVariant("colorHex", e.target.value)}
+                                                        className="font-mono flex-1"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label>Color Hex</Label>
-                                        <div className="flex items-center gap-2">
-                                            <Input
-                                                type="color"
-                                                className="w-12 p-1 h-10"
-                                                value={newVariant.colorHex}
-                                                onChange={(e) => updateNewVariant("colorHex", e.target.value)}
-                                            />
-                                            <Input
-                                                value={newVariant.colorHex}
-                                                onChange={(e) => updateNewVariant("colorHex", e.target.value)}
-                                            />
+                                    <div className="space-y-2 col-span-2">
+                                        <Label>Sizes to Generate</Label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {["XS", "S", "M", "L", "XL", "XXL", "3XL"].map(s => {
+                                                // Handle `size` field as an array internally just for UI selection
+                                                const selectedSizes = Array.isArray(newVariant.size) ? newVariant.size : [newVariant.size];
+                                                const isSelected = selectedSizes.includes(s);
+                                                return (
+                                                    <button
+                                                        key={s}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (isSelected) {
+                                                                updateNewVariant("size", selectedSizes.filter(sz => sz !== s) as any);
+                                                            } else {
+                                                                updateNewVariant("size", [...selectedSizes, s] as any);
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-md text-sm font-medium transition-colors border",
+                                                            isSelected
+                                                                ? "bg-[#1E88E5] text-white border-[#1E88E5]"
+                                                                : "bg-white text-gray-700 hover:bg-gray-100 border-gray-200"
+                                                        )}
+                                                    >
+                                                        {s}
+                                                    </button>
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Size</Label>
-                                        <Select
-                                            value={newVariant.size}
-                                            onValueChange={(value) => updateNewVariant("size", value)}
-                                        >
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                {["XS", "S", "M", "L", "XL", "XXL"].map(s => (
-                                                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Stock</Label>
+                                        <Label>Default Stock per Size</Label>
                                         <Input
                                             type="number"
                                             value={newVariant.stock}
@@ -299,7 +415,7 @@ export function AddProductForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>MRP</Label>
+                                        <Label>Default MRP</Label>
                                         <Input
                                             type="number"
                                             value={newVariant.market_price}
@@ -307,7 +423,7 @@ export function AddProductForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Selling Price</Label>
+                                        <Label>Default Selling Price</Label>
                                         <Input
                                             type="number"
                                             value={newVariant.sale_price}
@@ -315,36 +431,183 @@ export function AddProductForm() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>SKU (Optional)</Label>
+                                        <Label>SKU Pattern (Optional)</Label>
                                         <Input
                                             value={newVariant.sku_code}
                                             onChange={(e) => updateNewVariant("sku_code", e.target.value)}
                                             placeholder="Auto-generated if empty"
                                         />
                                     </div>
+                                    <div className="space-y-2">
+                                        <Label>Variant Image URL</Label>
+                                        <Input
+                                            value={newVariant.image_url || ""}
+                                            onChange={(e) => updateNewVariant("image_url", e.target.value)}
+                                            placeholder="https://..."
+                                        />
+                                    </div>
                                 </div>
-                                <Button onClick={addVariant} variant="secondary" className="w-full">
-                                    <Plus className="w-4 h-4 mr-2" /> Add Variant
+                                <Button
+                                    onClick={() => {
+                                        const selectedSizes = Array.isArray(newVariant.size) ? newVariant.size : [newVariant.size];
+                                        if (selectedSizes.length === 0) {
+                                            alert("Please select at least one size.");
+                                            return;
+                                        }
+
+                                        const generatedVariants = selectedSizes.map(size => {
+                                            let sku = newVariant.sku_code;
+                                            if (!sku) {
+                                                const colorPrefix = newVariant.colorText.substring(0, 3).toUpperCase();
+                                                const namePrefix = formData.name ? formData.name.substring(0, 3).toUpperCase() : "UF";
+                                                const shortId = Math.random().toString(36).substring(2, 6).toUpperCase();
+                                                sku = `${namePrefix}-${colorPrefix}-${size}-${shortId}`;
+                                            } else {
+                                                // If they provided a custom pattern, append size and ID
+                                                const shortId = Math.random().toString(36).substring(2, 6).toUpperCase();
+                                                sku = `${sku}-${size}-${shortId}`;
+                                            }
+
+                                            return {
+                                                ...newVariant,
+                                                id: Math.random().toString(36).substr(2, 9),
+                                                size,
+                                                sku_code: sku
+                                            };
+                                        });
+
+                                        setVariants([...variants, ...generatedVariants]);
+
+                                        // Clear only sizes and SKU to prep for next batch, keep price/color defaults for rapid entry
+                                        setNewVariant({
+                                            ...newVariant,
+                                            size: [] as any,
+                                            sku_code: "",
+                                            image_url: ""
+                                        });
+                                    }}
+                                    variant="secondary"
+                                    className="w-full bg-[#1E88E5]/10 text-[#1E88E5] hover:bg-[#1E88E5]/20 border border-[#1E88E5]/20"
+                                >
+                                    <Plus className="w-4 h-4 mr-2" /> Generate {Array.isArray(newVariant.size) ? newVariant.size.length : 1} Variants
                                 </Button>
                             </div>
 
-                            {/* Variants List */}
-                            <div className="space-y-2">
-                                <Label>Added Variants ({variants.length})</Label>
+                            {/* Variants List with Inline Editing */}
+                            <div className="space-y-3 pt-4 border-t">
+                                <Label className="text-base">Generated Variants ({variants.length})</Label>
                                 {variants.length === 0 ? (
-                                    <p className="text-sm text-gray-400 italic">No variants added yet.</p>
+                                    <div className="p-6 text-center border-2 border-dashed rounded-lg bg-gray-50">
+                                        <p className="text-sm text-gray-500">No variants generated yet.</p>
+                                        <p className="text-xs text-gray-400 mt-1">Use the bulk generator above to create sizes for a color quickly.</p>
+                                    </div>
                                 ) : (
-                                    <div className="space-y-2">
-                                        {variants.map((v) => (
-                                            <div key={v.id} className="flex items-center justify-between p-3 bg-white border rounded-md">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: v.colorHex }} />
-                                                    <span className="font-medium text-sm">{v.colorText} - {v.size}</span>
-                                                    <span className="text-xs text-gray-500">Stock: {v.stock} | ₹{v.sale_price}</span>
+                                    <div className="space-y-6">
+                                        {Object.entries(variantsByColor).map(([colorText, group]) => (
+                                            <div key={colorText} className="space-y-3 rounded-lg border border-gray-200 overflow-hidden">
+                                                {/* Color Group Header & Image Upload */}
+                                                <div className="bg-gray-50 p-4 border-b flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-6 h-6 rounded-full shadow-inner border border-black/10" style={{ backgroundColor: group.hex }} title={colorText} />
+                                                        <h4 className="font-semibold text-gray-900 text-lg">{colorText} Variants</h4>
+                                                    </div>
+                                                    <div className="w-full md:w-[350px] space-y-2">
+                                                        <Label className="text-xs text-gray-500">Image for {colorText} variant</Label>
+                                                        <div className="flex items-center gap-2">
+                                                            <Input
+                                                                className="flex-1 h-8 text-xs font-mono bg-white"
+                                                                value={group.image_url}
+                                                                onChange={(e) => {
+                                                                    const newUrl = e.target.value;
+                                                                    const updatedVariants = variants.map(v =>
+                                                                        v.colorText === colorText ? { ...v, image_url: newUrl } : v
+                                                                    );
+                                                                    setVariants(updatedVariants);
+                                                                }}
+                                                                placeholder="https://..."
+                                                            />
+                                                            <div className="w-[120px] shrink-0">
+                                                                <ImageUpload
+                                                                    value={group.image_url ? [group.image_url] : []}
+                                                                    onChange={(urls) => {
+                                                                        const url = urls.length > 0 ? urls[0] : "";
+                                                                        const updatedVariants = variants.map(v =>
+                                                                            v.colorText === colorText ? { ...v, image_url: url } : v
+                                                                        );
+                                                                        setVariants(updatedVariants);
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <Button size="icon" variant="ghost" className="text-red-500 h-8 w-8" onClick={() => removeVariant(v.id)}>
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
+
+                                                {/* Sizes for this Color */}
+                                                <div className="p-4 space-y-3">
+                                                    {group.variants.map((v) => (
+                                                        <div key={v.id} className="p-3 bg-white border border-gray-100 rounded-lg shadow-sm group hover:border-[#1E88E5]/50 transition-colors">
+                                                            <div className="flex items-start justify-between mb-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-sm font-bold rounded-md">{v.size}</span>
+                                                                    <span className="text-xs text-gray-500 ml-2 font-mono">{v.sku_code}</span>
+                                                                </div>
+                                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 -mt-1 -mr-1" onClick={() => removeVariant(v.id)}>
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                                <div className="space-y-1">
+                                                                    <Label className="text-xs text-gray-500">Stock</Label>
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="h-8 text-sm"
+                                                                        value={v.stock}
+                                                                        onChange={(e) => {
+                                                                            const updatedVariants = variants.map(variant => variant.id === v.id ? { ...variant, stock: e.target.value } : variant);
+                                                                            setVariants(updatedVariants);
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <Label className="text-xs text-gray-500">MRP (₹)</Label>
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="h-8 text-sm"
+                                                                        value={v.market_price}
+                                                                        onChange={(e) => {
+                                                                            const updatedVariants = variants.map(variant => variant.id === v.id ? { ...variant, market_price: e.target.value } : variant);
+                                                                            setVariants(updatedVariants);
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <Label className="text-xs text-gray-500">Selling Price (₹)</Label>
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="h-8 text-sm font-medium text-[#1E88E5]"
+                                                                        value={v.sale_price}
+                                                                        onChange={(e) => {
+                                                                            const updatedVariants = variants.map(variant => variant.id === v.id ? { ...variant, sale_price: e.target.value } : variant);
+                                                                            setVariants(updatedVariants);
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-1 col-span-3 sm:col-span-1">
+                                                                    <Label className="text-xs text-gray-500">SKU Overwrite</Label>
+                                                                    <Input
+                                                                        className="h-8 text-xs font-mono"
+                                                                        value={v.sku_code}
+                                                                        onChange={(e) => {
+                                                                            const updatedVariants = variants.map(variant => variant.id === v.id ? { ...variant, sku_code: e.target.value } : variant);
+                                                                            setVariants(updatedVariants);
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

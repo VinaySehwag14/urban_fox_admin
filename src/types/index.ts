@@ -27,6 +27,8 @@ export interface Variant {
     selling_price: number;
     mrp: number;
     stock_quantity: number;
+    image_url?: string;
+    colorHex?: string;
 }
 
 export interface Coupon {
@@ -96,4 +98,11 @@ export interface Banner {
     sub_text: string;
     image: string;
     link: string;
+}
+
+export interface Color {
+    id: string;
+    name: string;
+    hex_code: string;
+    created_at?: string;
 }

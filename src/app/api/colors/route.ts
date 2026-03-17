@@ -3,14 +3,15 @@ import { cookies } from "next/headers";
 
 export async function GET() {
     try {
-        // Admin needs to see all categories including hidden ones
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/categories?include_hidden=true`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/colors`, {
+            cache: 'no-store'
+        });
 
         const data = await res.json();
 
         if (!res.ok) {
             return NextResponse.json(
-                { error: data.message || "Failed to fetch categories" },
+                { error: data.message || "Failed to fetch colors" },
                 { status: res.status }
             );
         }
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
         const token = cookieStore.get("auth_token")?.value;
         const body = await request.json();
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/categories/create`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/colors/create`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
 
         if (!res.ok) {
             return NextResponse.json(
-                { error: data.message || "Failed to create category" },
+                { error: data.message || "Failed to create color" },
                 { status: res.status }
             );
         }

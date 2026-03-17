@@ -10,21 +10,24 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Edit2, Trash2 } from "lucide-react";
 
 interface Category {
     id: string;
     name: string;
     image: string;
+    is_active: boolean;
 }
 
 interface CategoryTableProps {
     categories: Category[];
     onEdit: (category: Category) => void;
     onDelete: (id: string) => void;
+    onToggleVisibility: (id: string, is_active: boolean) => void;
 }
 
-export function CategoryTable({ categories, onEdit, onDelete }: CategoryTableProps) {
+export function CategoryTable({ categories, onEdit, onDelete, onToggleVisibility }: CategoryTableProps) {
     return (
         <div className="bg-white rounded-lg border shadow-sm">
             <Table>
@@ -35,19 +38,23 @@ export function CategoryTable({ categories, onEdit, onDelete }: CategoryTablePro
                         </TableHead>
                         <TableHead>IMAGE</TableHead>
                         <TableHead>NAME</TableHead>
+                        <TableHead className="text-center">VISIBILITY</TableHead>
                         <TableHead className="text-right">ACTIONS</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {categories.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={4} className="text-center py-10">
+                            <TableCell colSpan={5} className="text-center py-10">
                                 No categories found.
                             </TableCell>
                         </TableRow>
                     ) : (
                         categories.map((category) => (
-                            <TableRow key={category.id}>
+                            <TableRow
+                                key={category.id}
+                                className={category.is_active === false ? "opacity-50" : ""}
+                            >
                                 <TableCell>
                                     <Checkbox />
                                 </TableCell>
@@ -60,7 +67,22 @@ export function CategoryTable({ categories, onEdit, onDelete }: CategoryTablePro
                                         />
                                     </div>
                                 </TableCell>
-                                <TableCell className="font-medium text-gray-900">{category.name}</TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-medium text-gray-900">{category.name}</span>
+                                        {category.is_active === false && (
+                                            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Hidden</span>
+                                        )}
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <div className="flex items-center justify-center">
+                                        <Switch
+                                            checked={category.is_active !== false}
+                                            onCheckedChange={(checked) => onToggleVisibility(category.id, checked)}
+                                        />
+                                    </div>
+                                </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-2">
                                         <Button
