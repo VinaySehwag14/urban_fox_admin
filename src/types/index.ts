@@ -28,6 +28,7 @@ export interface Variant {
     mrp: number;
     stock_quantity: number;
     image_url?: string;
+    colorHex?: string;
 }
 
 export interface Coupon {

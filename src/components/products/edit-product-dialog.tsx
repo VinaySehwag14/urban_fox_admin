@@ -88,25 +88,50 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
 
     useEffect(() => {
         if (product) {
-            const categoryId = typeof product.category === 'object' && product.category ? (product.category as any).id : product.category
-            const imageUrl = product.image || (product.images && product.images.length > 0 ? product.images[0].image_url : "")
+            const p = product as any;
+            console.log("Loading Product into Edit Dialog:", JSON.stringify(p, null, 2));
+            
+            // 1. Extract category ID - check multiple locations
+            let categoryId = "";
+            if (p.categories && Array.isArray(p.categories) && p.categories.length > 0) {
+                // If the backend flattened it via transformedProducts
+                categoryId = p.categories[0].id;
+            } else if (typeof p.category === 'object' && p.category) {
+                // If it's the raw Supabase response object
+                categoryId = (p.category as any).id || "";
+            } else if (typeof p.category === 'string') {
+                // If it's just the ID string
+                categoryId = p.category;
+            }
+
+            // 2. Extract Prices - handle both selling_price (modern) and sale_price (legacy)
+            // Use logical OR to catch both undefined and null
+            const salePrice = p.selling_price || p.sellingPrice || p.sale_price || p.price || "";
+            const marketPrice = p.mrp || p.marketPrice || p.market_price || "";
+
+            // 3. Extract Stock - handle explicit field or sum variants
+            const variantStock = p.variants?.reduce((acc: number, v: any) => acc + (parseInt(v.stock_quantity) || parseInt(v.stock) || 0), 0) || 0;
+            const currentStock = p.stock || p.inventory || (p.variants && p.variants.length > 0 ? variantStock : 0);
+
+            // 4. Extract Image
+            const imageUrl = p.image || (p.images && p.images.length > 0 ? (p.images[0].image_url || p.images[0].url) : "");
 
             setFormData({
-                name: product.name || "",
-                description: product.description || "",
-                category: categoryId || "",
-                sale_price: product.sale_price?.toString() || "",
-                market_price: product.market_price?.toString() || "",
-                stock: product.stock?.toString() || "",
-                status: typeof product.status === 'boolean'
-                    ? (product.status ? "Active" : "Inactive")
-                    : (product.status || "Active"),
+                name: p.name || "",
+                description: p.description || "",
+                category: categoryId.toString(), // Ensure string for Select component
+                sale_price: salePrice.toString(),
+                market_price: marketPrice.toString(),
+                stock: currentStock.toString(),
+                status: typeof p.status === 'boolean'
+                    ? (p.status ? "Active" : "Inactive")
+                    : (p.status || "Active"),
                 image: imageUrl,
-                colorHex: "#000000", // Default if not available
+                colorHex: "#000000",
                 colorText: "Black",
                 size: "M",
-            })
-            setVariants(product.variants || [])
+            });
+            setVariants(p.variants || []);
         }
     }, [product])
 
@@ -129,18 +154,13 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
 
             const payload = {
                 name: formData.name,
-                images: [{ url: formData.image, sort_order: 1 }],
-                sale_price: parseFloat(formData.sale_price) || 0,
-                market_price: parseFloat(formData.market_price) || 0,
-                color: {
-                    hex: formData.colorHex,
-                    text: formData.colorText
-                },
-                size: formData.size,
                 description: formData.description,
-                stock: parseInt(formData.stock) || 0,
+                selling_price: parseFloat(formData.sale_price) || 0,
+                mrp: parseFloat(formData.market_price) || 0,
+                // Note: stock is NOT sent here - it lives in product_variants.stock_quantity, not products table
                 is_active: formData.status === "Active",
-                category: formData.category,
+                category_ids: formData.category ? [formData.category] : [],
+                images: formData.image ? [{ image_url: formData.image, is_primary: true }] : [],
                 variants: enrichedVariants,
             }
 
@@ -275,12 +295,11 @@ export function EditProductDialog({ product, open, onOpenChange, onSuccess }: Ed
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Stock Quantity</Label>
-                        <Input
-                            type="number"
-                            value={formData.stock}
-                            onChange={(e) => updateData("stock", e.target.value)}
-                        />
+                        <Label>Total Stock (from variants)</Label>
+                        <div className="flex items-center h-10 px-3 rounded-md border bg-gray-50 text-gray-500 text-sm">
+                            {variants.reduce((acc, v: any) => acc + (parseInt(v.stock_quantity) || parseInt(v.stock) || 0), 0)} units across {variants.length} variant{variants.length !== 1 ? "s" : ""}
+                        </div>
+                        <p className="text-xs text-gray-400">Stock is managed per-variant. Use the variant editor below to update stock.</p>
                     </div>
 
                     <div className="space-y-2">
