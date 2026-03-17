@@ -10,6 +10,7 @@ interface Category {
     id: string;
     name: string;
     image: string;
+    is_active: boolean;
 }
 
 export default function CategoriesPage() {
@@ -77,6 +78,27 @@ export default function CategoriesPage() {
         }
     };
 
+    const handleToggleVisibility = async (id: string, is_active: boolean) => {
+        try {
+            const res = await fetch(`/api/categories/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ is_active }),
+            });
+
+            if (res.ok) {
+                // Optimistically update UI
+                setCategories(prev =>
+                    prev.map(cat => cat.id === id ? { ...cat, is_active } : cat)
+                );
+            } else {
+                alert("Failed to update category visibility");
+            }
+        } catch (error) {
+            console.error("Failed to toggle category visibility", error);
+        }
+    };
+
     const handleSaveCategory = async (category: any) => {
         try {
             const url = category.id ? `/api/categories/${category.id}` : "/api/categories";
@@ -121,6 +143,7 @@ export default function CategoriesPage() {
                         categories={categories}
                         onEdit={handleEditCategory}
                         onDelete={handleDeleteCategory}
+                        onToggleVisibility={handleToggleVisibility}
                     />
                 )}
             </div>

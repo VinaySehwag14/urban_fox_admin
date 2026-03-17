@@ -98,3 +98,10 @@ export interface Banner {
     image: string;
     link: string;
 }
+
+export interface Color {
+    id: string;
+    name: string;
+    hex_code: string;
+    created_at?: string;
+}

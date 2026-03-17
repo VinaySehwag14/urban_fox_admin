@@ -2,6 +2,7 @@ import { UploadCloud, X, Link as LinkIcon, Image as ImageIcon } from "lucide-rea
 import { useState, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { compressImage } from "@/lib/utils"
 
 interface ImageUploadProps {
     value?: string[];
@@ -22,32 +23,26 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
         setIsDragging(false);
     };
 
-    const processFiles = (files: FileList | null) => {
+    const processFiles = async (files: FileList | null) => {
         if (!files) return;
 
         const newImages: string[] = [];
-        let processedCount = 0;
-        const totalFiles = files.length;
+        const validFiles = Array.from(files).filter(file => file.type.startsWith("image/"));
 
-        Array.from(files).forEach((file) => {
-            if (!file.type.startsWith("image/")) {
-                processedCount++;
-                return;
+        if (validFiles.length === 0) return;
+
+        try {
+            const compressedImages = await Promise.all(
+                validFiles.map(file => compressImage(file))
+            );
+
+            const successfulImages = compressedImages.filter((img): img is string => !!img);
+            if (successfulImages.length > 0 && onChange) {
+                onChange([...value, ...successfulImages]);
             }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target?.result as string;
-                if (result) {
-                    newImages.push(result);
-                }
-                processedCount++;
-                if (processedCount === totalFiles && onChange) {
-                    onChange([...value, ...newImages]);
-                }
-            };
-            reader.readAsDataURL(file);
-        });
+        } catch (error) {
+            console.error("Failed to compress images", error);
+        }
     };
 
     const handleDrop = (e: React.DragEvent) => {

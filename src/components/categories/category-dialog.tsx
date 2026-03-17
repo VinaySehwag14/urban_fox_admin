@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SingleImageUpload } from "@/components/ui/single-image-upload";
 
 interface Category {
     id?: string;
@@ -92,20 +93,14 @@ export function CategoryDialog({
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="image" className="text-right">
-                                Image URL
-                            </Label>
-                            <Input
-                                id="image"
-                                value={formData.image}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, image: e.target.value })
-                                }
-                                className="col-span-3"
-                                required
-                                placeholder="https://example.com/image.jpg"
-                            />
+                        <div className="grid grid-cols-4 items-start gap-4 pt-2">
+                            <Label className="text-right pt-2">Image</Label>
+                            <div className="col-span-3">
+                                <SingleImageUpload
+                                    value={formData.image}
+                                    onChange={(url) => setFormData({ ...formData, image: url })}
+                                />
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>

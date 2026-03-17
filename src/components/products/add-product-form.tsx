@@ -35,6 +35,7 @@ export function AddProductForm() {
     const [currentStep, setCurrentStep] = useState(1)
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+    const [globalColors, setGlobalColors] = useState<{ id: string; name: string; hex_code: string }[]>([]);
 
     // Base Product Data
     const [formData, setFormData] = useState({
@@ -64,22 +65,41 @@ export function AddProductForm() {
     })
 
     useEffect(() => {
-        const fetchCategories = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch("/api/categories");
-                if (res.ok) {
-                    const data = await res.json();
+                const [resCat, resCol] = await Promise.all([
+                    fetch("/api/categories"),
+                    fetch("/api/colors")
+                ]);
+
+                if (resCat.ok) {
+                    const data = await resCat.json();
                     if (data.categories && Array.isArray(data.categories)) {
                         setCategories(data.categories);
                     } else if (Array.isArray(data)) {
                         setCategories(data);
                     }
                 }
+
+                if (resCol.ok) {
+                    const colData = await resCol.json();
+                    if (colData.colors && Array.isArray(colData.colors)) {
+                        setGlobalColors(colData.colors);
+                        // Auto-select first color if available
+                        if (colData.colors.length > 0) {
+                            setNewVariant(prev => ({
+                                ...prev,
+                                colorText: colData.colors[0].name,
+                                colorHex: colData.colors[0].hex_code
+                            }));
+                        }
+                    }
+                }
             } catch (error) {
-                console.error("Failed to fetch categories", error);
+                console.error("Failed to fetch initial data", error);
             }
         };
-        fetchCategories();
+        fetchData();
     }, []);
 
     const updateFormData = (key: string, value: any) => {
@@ -155,6 +175,7 @@ export function AddProductForm() {
                 }
                 return {
                     color: v.colorText,
+                    colorHex: v.colorHex,
                     size: v.size,
                     stock_quantity: parseInt(v.stock) || 0,
                     sku_code: finalSku,
@@ -293,28 +314,65 @@ export function AddProductForm() {
                             <div className="bg-gray-50 p-4 rounded-lg space-y-4 border">
                                 <h4 className="text-sm font-medium">Bulk Variant Generator</h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Color Name</Label>
-                                        <Input
-                                            placeholder="e.g. Black"
-                                            value={newVariant.colorText}
-                                            onChange={(e) => updateNewVariant("colorText", e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Color Hex</Label>
-                                        <div className="flex items-center gap-2">
-                                            <Input
-                                                type="color"
-                                                className="w-12 p-1 h-10 cursor-pointer rounded-md"
-                                                value={newVariant.colorHex}
-                                                onChange={(e) => updateNewVariant("colorHex", e.target.value)}
-                                            />
-                                            <Input
-                                                value={newVariant.colorHex}
-                                                onChange={(e) => updateNewVariant("colorHex", e.target.value)}
-                                                className="font-mono"
-                                            />
+                                    <div className="space-y-4 col-span-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-white">
+                                            <div className="space-y-2">
+                                                <Label>Import Global Color</Label>
+                                                <Select
+                                                    value={globalColors.find(c => c.name === newVariant.colorText)?.name || "custom"}
+                                                    onValueChange={(val) => {
+                                                        const selected = globalColors.find(c => c.name === val);
+                                                        if (selected) {
+                                                            setNewVariant(prev => ({
+                                                                ...prev,
+                                                                colorText: selected.name,
+                                                                colorHex: selected.hex_code
+                                                            }));
+                                                        } else {
+                                                            setNewVariant(prev => ({ ...prev, colorText: "", colorHex: "#000000" }));
+                                                        }
+                                                    }}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select or Custom" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="custom">Custom Color...</SelectItem>
+                                                        {globalColors.map(c => (
+                                                            <SelectItem key={c.id} value={c.name}>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: c.hex_code }} />
+                                                                    {c.name}
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Color Name</Label>
+                                                <Input
+                                                    placeholder="e.g. Neon Pink"
+                                                    value={newVariant.colorText}
+                                                    onChange={(e) => updateNewVariant("colorText", e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Color Hex</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <Input
+                                                        type="color"
+                                                        className="w-12 p-1 h-10 cursor-pointer rounded-md"
+                                                        value={newVariant.colorHex}
+                                                        onChange={(e) => updateNewVariant("colorHex", e.target.value)}
+                                                    />
+                                                    <Input
+                                                        value={newVariant.colorHex}
+                                                        onChange={(e) => updateNewVariant("colorHex", e.target.value)}
+                                                        className="font-mono flex-1"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="space-y-2 col-span-2">
